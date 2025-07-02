@@ -6,8 +6,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class SysUser extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
-    
+    use HasApiTokens; // Add this line!
+
     public $timestamps = false;
     
     protected $fillable = [
