@@ -6,10 +6,33 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
+use App\Models\SysUser;
 use Carbon\Carbon;
 
-class AuthController extends Controller
+class SysUserController extends Controller
 {
+
+    public function register(Request $request): JsonResponse
+    {
+        $request->validate([
+            'username' => 'required|string|max:255|unique:sys_users',
+            'password' => 'required|string|min:6',
+        ]);
+
+        $user = SysUser::create([
+            'username' => $request->username,
+            'password' => Hash::make($request->password),
+        ]);
+
+        return response()->json([
+            'user' => $user->only(['id', 'username']),
+            'message' => 'Registration successful'
+        ], 201);
+
+        // return $this->createTokenWithExpiration($user);
+    }
 
     public function login(Request $request): JsonResponse
     {
@@ -24,43 +47,26 @@ class AuthController extends Controller
 
         $user = Auth::user();
         
-        $existingToken = $user->tokens()->first();
-        
-        if ($existingToken && !$this->isTokenExpired($existingToken)) {
-            return response()->json([
-                'message' => 'Token is still valid',
-                'token' => $this->getTokenString($existingToken),
-                'token_exists' => true,
-                'expires_at' => $existingToken->expires_at?->toISOString(),
-                'user' => $user->only(['id', 'username'])
-            ]);
-        }
-        
         $user->tokens()->delete();
         
         return $this->createTokenWithExpiration($user);
     }
 
-
     private function createTokenWithExpiration($user): JsonResponse
     {
         $token = $user->createToken('api-token');
-        $token->accessToken->update([
-            'expires_at' => now()->addMinutes(config('sanctum.expiration'))
-        ]);
+        
+        $expiresAt = now()->addMinutes(config('sanctum.expiration'));
+        
+        $token->accessToken->expires_at = $expiresAt;
+        $token->accessToken->save();
         
         return response()->json([
             'token' => $token->plainTextToken,
-            'expires_at' => $expires_at->toISOString(),
+            'expires_at' => $expiresAt->toISOString(),
             'user' => $user->only(['id', 'username']),
-            'message' => 'Login successful - new token created'
+            'message' => 'Registration successful - token created'
         ]);
-    }
-
-    private function getTokenString($token): string
-    {
-        
-        return $token->id . '|' . $token->token;
     }
 
     private function isTokenExpired($token): bool

@@ -2,26 +2,20 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\TokenController;
+use App\Http\Controllers\Api\AuthorController;
+use App\Http\Controllers\Api\BookController;
+use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\Api\GenreController;
+use App\Http\Controllers\Api\SysUserController;
 
 
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [SysUserController::class, 'login']);
 
-Route::middleware('auth:sanctum')->get('/test-auth', function (Request $request) {
-    return response()->json([
-        'authenticated' => true,
-        'user' => $request->user(),
-        'message' => 'Auth working!'
-    ]);
-});
-
+Route::post('/register', [SysUserController::class, 'register']);
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/user', fn(Request $request) => $request->user());
+    Route::apiResource('authors', AuthorController::class);
+    Route::apiResource('books', BookController::class);
+    Route::apiResource('genres', GenreController::class);
+    Route::apiResource('books.reviews', ReviewController::class);
 
-    Route::get('/tokens/status', [TokenController::class, 'status']);
-    Route::get('/tokens/current', [TokenController::class, 'current']);
-    Route::post('/tokens/create', [TokenController::class, 'create']);
-    Route::post('/tokens/regenerate', [TokenController::class, 'regenerate']);
-    Route::delete('/tokens/revoke', [TokenController::class, 'revoke']);
 });
